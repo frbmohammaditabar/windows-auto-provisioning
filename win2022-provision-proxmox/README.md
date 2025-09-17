@@ -38,6 +38,7 @@ This project automates the provisioning of **Windows Server VMs** on **Proxmox V
 ---
 
 ## Project Structure
+```bash
 .
 ├── terraform/
 │ ├── main.tf # Terraform VM definition
@@ -52,7 +53,7 @@ This project automates the provisioning of **Windows Server VMs** on **Proxmox V
 ├── admin_server.yml
 ├── rds_server.yml
 └── dfs_server.yml
-
+```
 ---
 
 ## Usage
