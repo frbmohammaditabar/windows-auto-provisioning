@@ -1,0 +1,6 @@
+ansible_user: Administrator
+ansible_password: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:admin_password') }}"
+ad_domain_name: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_domain_name') }}"
+ad_netbios_name: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_netbios_name') }}"
+ad_safe_mode_pass: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_safe_mode_pass') }}"
+dns_forwarder: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:dns_forwarder') }}"

@@ -1,0 +1,4 @@
+- name: Install Remote Server Admin Tools
+  ansible.windows.win_feature:
+    name: RSAT-ADDS
+    state: present

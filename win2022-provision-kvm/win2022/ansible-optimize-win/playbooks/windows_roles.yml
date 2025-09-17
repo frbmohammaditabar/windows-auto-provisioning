@@ -1,0 +1,90 @@
+---
+- name: Install Windows roles (DC, Admin, RDS, DFS)
+hosts: all
+gather_facts: no
+vars:
+vault_addr: "{{ lookup('env','VAULT_ADDR') | default('https://vault.example.com:8200') }}"
+tasks:
+- name: Load windows secrets from Vault
+set_fact:
+vault_windows: "{{ lookup('community.hashi_vault.vault_kv2_get', 'windows', url=vault_addr) }}"
+delegate_to: localhost
+
+
+- name: Configure Domain Controllers
+  hosts: domain_controllers
+  gather_facts: no
+  vars:
+    vault_addr: "{{ lookup('env','VAULT_ADDR') | default('https://10.10.224.227:8200') }}"
+  tasks:
+    - name: Load Windows secrets from Vault
+      set_fact:
+        vault_windows: "{{ lookup('community.hashi_vault.vault_kv2_get', 'windows', url=vault_addr) }}"
+      delegate_to: localhost
+
+    - name: Install AD DS and DNS
+      ansible.windows.win_feature:
+        name:
+          - AD-Domain-Services
+          - DNS
+        include_management_tools: yes
+        state: present
+
+    - name: Promote to Domain Controller
+      ansible.windows.win_domain:
+        dns_domain_name: corp.local
+        domain_netbios_name: CORP
+        safe_mode_password: "{{ vault_windows.secret.safemode_password }}"
+        domain_admin_user: "{{ vault_windows.secret.domain_admin_user }}"
+        domain_admin_password: "{{ vault_windows.secret.domain_admin_password }}"
+      register: dc_result
+
+    - name: Reboot if required
+      ansible.windows.win_reboot:
+      when: dc_result.reboot_required
+
+
+# ----------------------------
+# Administration Server
+# ----------------------------
+- name: Configure Administration Servers
+  hosts: admin_servers
+  gather_facts: no
+  tasks:
+    - name: Install RSAT Tools
+      ansible.windows.win_feature:
+        name: RSAT-AD-Tools
+        include_management_tools: yes
+        state: present
+
+
+# ----------------------------
+# Remote Desktop Services (RDS)
+# ----------------------------
+- name: Configure RDS Servers
+  hosts: rds_servers
+  gather_facts: no
+  tasks:
+    - name: Install RDS roles
+      ansible.windows.win_feature:
+        name:
+          - RDS-RD-Server
+          - RDS-Licensing
+        include_management_tools: yes
+        state: present
+
+
+# ----------------------------
+# Distributed File System (DFS)
+# ----------------------------
+- name: Configure DFS Servers
+  hosts: dfs_servers
+  gather_facts: no
+  tasks:
+    - name: Install DFS Namespace and Replication
+      ansible.windows.win_feature:
+        name:
+          - FS-DFS-Namespace
+          - FS-DFS-Replication
+        include_management_tools: yes
+        state: present

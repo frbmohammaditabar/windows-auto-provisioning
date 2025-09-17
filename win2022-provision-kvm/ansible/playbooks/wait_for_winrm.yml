@@ -1,0 +1,9 @@
+- hosts: windows
+  gather_facts: no
+  tasks:
+    - name: Wait for WinRM to respond
+      win_ping:
+      register: ping_result
+      retries: 10
+      delay: 15
+      until: ping_result is succeeded

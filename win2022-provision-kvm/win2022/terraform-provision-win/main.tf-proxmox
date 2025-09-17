@@ -1,0 +1,86 @@
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "Telmate/proxmox"
+      version = "3.0.1-rc4"
+    }
+    vault = {
+      source = "hashicorp/vault"
+    }
+    local = {
+      source = "hashicorp/local"
+    }
+  }
+
+  required_version = ">= 1.5.0"
+}
+
+# -----------------------
+# Providers
+# -----------------------
+provider "vault" {
+  address = var.vault_addr
+  token   = var.vault_token
+}
+
+provider "proxmox" {
+  pm_api_url      = var.pm_api_url
+  pm_user         = var.pm_user
+  pm_password     = var.pm_password
+  pm_tls_insecure = true
+}
+
+# -----------------------
+# Vault secrets
+# -----------------------
+data "vault_kv_secret_v2" "windows" {
+  mount = "secret"
+  name  = "windows"
+}
+
+# -----------------------
+# Windows VM provisioning
+# -----------------------
+resource "proxmox_vm_qemu" "windows" {
+  count       = length(var.instances)
+  name        = "${var.instance_prefix}-${count.index + 1}"
+  target_node = var.pm_node
+  clone       = var.template_name
+
+  cores   = 4
+  sockets = 1
+  memory  = 8192
+  scsihw  = "virtio-scsi-pci"
+  bootdisk = "scsi0"
+
+  disk {
+    size    = "60G"
+    type    = "scsi"
+    storage = var.pm_storage
+  }
+
+  network {
+    model  = "virtio"
+    bridge = var.pm_bridge
+  }
+
+  os_type = "win10"  # required for Windows
+
+  ipconfig0 = "ip=dhcp"
+}
+
+# -----------------------
+# Generate Ansible inventory
+# -----------------------
+resource "local_file" "ansible_inventory" {
+  content = templatefile("${path.module}/templates/inventory.tpl", {
+    vms      = proxmox_vm_qemu.windows
+    username = data.vault_kv_secret_v2.windows.data["username"]
+    password = data.vault_kv_secret_v2.windows.data["password"]
+  })
+  filename = "${path.module}/../ansible/inventory.ini"
+}
+
+output "ansible_inventory_path" {
+  value = local_file.ansible_inventory.filename
+}
