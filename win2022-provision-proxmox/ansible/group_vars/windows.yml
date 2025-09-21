@@ -1,6 +1,6 @@
 ansible_user: Administrator
-ansible_password: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:admin_password') }}"
-ad_domain_name: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_domain_name') }}"
-ad_netbios_name: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_netbios_name') }}"
-ad_safe_mode_pass: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:ad_safe_mode_pass') }}"
-dns_forwarder: "{{ lookup('community.hashi_vault.hashi_vault','secret=secret/windows:dns_forwarder') }}"
+ansible_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/windows field=data')['ansible_password'] }}"
+admin_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/windows field=data')['admin_password'] }}"
+ad_domain_name: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/windows field=ad_domain_name') | default('lab.local') }}"
+ad_netbios_name: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/windows field=ad_netbios_name') | default('LAB') }}"
+ad_safe_mode_pass: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/windows field=ad_safe_mode_pass') | default(ansible_password) }}"

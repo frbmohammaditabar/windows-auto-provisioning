@@ -1,0 +1,16 @@
+---
+- name: Check if RDS role is installed
+  ansible.builtin.win_shell: |
+    $f = Get-WindowsFeature -Name RDS-RD-Server
+    $status = if ($f -and $f.Installed) { "installed" } else { "notinstalled" }
+    $status | ConvertTo-Json -Compress
+  register: rds_check
+  changed_when: false
+
+- name: Install RDS Host if missing
+  ansible.builtin.win_feature:
+    name: RDS-RD-Server
+    state: present
+    include_management_tools: yes
+  when: rds_check.stdout | from_json != "installed"
+  register: rds_install

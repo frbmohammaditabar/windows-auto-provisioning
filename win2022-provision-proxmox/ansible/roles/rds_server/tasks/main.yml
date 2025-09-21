@@ -1,4 +1,0 @@
-- name: Install RDS role
-  ansible.windows.win_feature:
-    name: RDS-RD-Server
-    state: present

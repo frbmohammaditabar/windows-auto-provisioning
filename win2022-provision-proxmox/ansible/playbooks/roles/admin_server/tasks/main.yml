@@ -1,0 +1,21 @@
+---
+- name: Check RSAT AD Tools
+  ansible.builtin.win_shell: |
+    $f = Get-WindowsFeature -Name RSAT-AD-Tools
+    $status = if ($f -and $f.Installed) { "installed" } else { "notinstalled" }
+    $status | ConvertTo-Json -Compress
+  register: rsat_check
+  changed_when: false
+
+- name: Show RSAT AD Tools status
+  ansible.builtin.debug:
+    msg: "{{ rsat_check.stdout | from_json }}"
+
+- name: Install RSAT tools if missing
+  ansible.builtin.win_shell: |
+    Install-WindowsFeature RSAT-AD-Tools -IncludeAllSubFeature -IncludeManagementTools
+  when: rsat_check.stdout | from_json != "installed"
+  register: rsat_install
+  retries: 2
+  delay: 15
+  until: rsat_install is succeeded

@@ -1,3 +1,0 @@
-- hosts: windows
-  roles:
-    - rds_server

@@ -1,9 +1,0 @@
-- name: Install DFS Namespaces
-  ansible.windows.win_feature:
-    name: FS-DFS-Namespace
-    state: present
-
-- name: Install DFS Replication
-  ansible.windows.win_feature:
-    name: FS-DFS-Replication
-    state: present

@@ -1,0 +1,32 @@
+---
+- name: Ensure AD-Domain-Services is installed
+  ansible.windows.win_feature:
+    name: AD-Domain-Services
+    state: present
+  register: ad_feature
+
+- name: Show AD-Domain-Services installation status
+  debug:
+    msg: "AD-Domain-Services installation changed: {{ ad_feature.changed }}"
+
+- name: Promote to domain controller (create new forest) - only if not yet DC
+  ansible.builtin.shell: |
+    $domain = "{{ ad_domain_name }}"
+    $netbios = "{{ ad_netbios_name }}"
+    $safepw = ConvertTo-SecureString "{{ ad_safe_mode_pass }}" -AsPlainText -Force
+
+    if (-not (Get-ADDomain -ErrorAction SilentlyContinue)) {
+      Install-ADDSForest `
+        -DomainName $domain `
+        -DomainNetbiosName $netbios `
+        -SafeModeAdministratorPassword $safepw `
+        -InstallDns `
+        -Force `
+        -NoRebootOnCompletion:$false
+    } else {
+      Write-Output "domain exists"
+    }
+  args:
+    executable: powershell.exe
+  register: promote_result
+  failed_when: promote_result.rc != 0 and '"domain exists"' not in promote_result.stdout

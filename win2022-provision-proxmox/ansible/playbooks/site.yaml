@@ -1,0 +1,40 @@
+---
+# Main site playbook for Windows infrastructure provisioning
+# All servers are in "windows" inventory group
+
+- name: Configure Windows Servers
+  hosts: windows
+  gather_facts: no
+  vars_files:
+    - group_vars/windows.yml
+
+  tasks:
+    - name: Show password from Vault (debug only)
+      debug:
+        msg: "Administrator password is {{ ansible_password }} Domain name is {{ ad_domain_name }} "
+
+    - name: Install AD-Domain-Services
+      ansible.windows.win_feature:
+        name: AD-Domain-Services
+        state: present
+      tags: domain_controller
+
+    - name: Apply Domain Controller role
+      include_role:
+        name: domain_controller
+      tags: domain_controller
+
+    - name: Apply Admin Server role
+      include_role:
+        name: admin_server
+      tags: admin_server
+
+    - name: Apply RDS role
+      include_role:
+        name: rds_server
+      tags: rds
+
+    - name: Apply DFS role
+      include_role:
+        name: dfs_server
+      tags: dfs

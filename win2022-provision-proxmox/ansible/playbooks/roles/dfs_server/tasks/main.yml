@@ -1,0 +1,19 @@
+---
+- name: Check if DFS features are installed
+  ansible.builtin.win_shell: |
+    $ns = Get-WindowsFeature FS-DFS-Namespace
+    $rep = Get-WindowsFeature FS-DFS-Replication
+    $status = if ($ns.Installed -and $rep.Installed) { "installed" } else { "notinstalled" }
+    $status | ConvertTo-Json -Compress
+  register: dfs_check
+  changed_when: false
+
+- name: Install DFS features if missing
+  ansible.builtin.win_feature:
+    name:
+      - FS-DFS-Namespace
+      - FS-DFS-Replication
+    state: present
+    include_management_tools: yes
+  when: dfs_check.stdout | from_json != "installed"
+  register: dfs_install
